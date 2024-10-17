@@ -1,0 +1,50 @@
+RabbitMQ
+Nesse post, iremos falar sobre o que é o RabbitMQ, bem como boas práticas, casos de uso, e provedores que nos ajudam a utilizar o RabbitMQ sem gerenciar servidor.
+
+O que iremos precisar para esse tutorial?
+Precisaremos que tenha um conhecimento de:
+
+Arquitetura microservices básico
+Docker
+Docker-Compose
+NodeJs
+Express
+Para que serve o RabbitMQ?
+O RabbitMQ é um Message Broker. Ok, mas o que é um Message Broker?
+
+Um Message Broker, seria um intermediador de comunicação(nesse caso, de mensagem). Ele é o software/protocolo que intermedia a comunicação de mensagens, entre sistemas.
+
+O RabbitMQ, funciona principalmente, sobre o protocolo AMQP(Advanced Message Queue Protocol), que é amplamente utilizado na criação de sistemas com arquitetura microservices.
+
+Grandes empresas utilizam o protocolo AMQP para comunicação de seus sistemas, por ser um protocolo robusto e seguro, no quesito de entrega de mensagens assíncronas entre serviços.
+
+De grandes empresas que utilizam o RabbitMQ/AMQP, posso citar: Amazon, Netflix, Twitter, Microsoft, eBay, Reddit, NASA, etc…
+
+São várias empresas que utilizam o RabbitMQ/AMQP. As empresas que utilizam, você pode ver mais clicando aqui e clicando aqui.
+
+Percebemos que existem diversos Messages Brokers além do RabbitMQ, como o Apache Kafka, Redis Pub/Sub, AWS SQS, IBM MQ, Azure MQ entre outros. Não irei falar a diferença entre eles, pois o artigo iria ficar mais comprido ainda, mas acho interessante vocês saberem o diferencial de cada um deles.
+
+O caso de uso do RabbitMQ(entre outros), se dá quando se deseja utilizar arquitetura microservices, quando um serviço precisa se comunicar com outro serviço, e essa comunicação não pode ser feita via API Web HTTP, pois a chamada API Web HTTP, requer obrigatoriamente uma chamada de sucesso, logo, ela é síncrono, diferente do RabbitMQ, que é assíncrono, e não obriga uma resposta/processamento imediato.
+
+Imagina por exemplo, o sistema de publicar post no Instagram. Você seleciona a foto e publica no Instagram. Como você percebe, a foto não é publicada imediatamente, ela demora alguns segundos para ser publicada. Você não precisa ficar preso na tela do celular, principalmente na tela de publicar conteúdo, enquanto a publicação está sendo publicada.
+
+Você apenas envia a imagem, que é enviado em uma requisição POST no serviço de recebimento de chamadas, e após isso, essa requisição de publicação é adicionado em um tópico do RabbitMQ, no qual um outro serviço irá receber a mensagem e começar a tratar ela, de forma independente. Em seu caso, você irá ficar na tela do usuário, apenas até receber a resposta com status 200, que é quando o servidor do Insta diz que recebeu seu pedido de criação de Publicação, e o resto, é cuidado internamente, de forma assíncrona.
+
+Percebe-se que o tempo do usuário na tela, diminuiu de vários segundos, a menos de 5 segundos.
+
+É uma melhora e tanto para o usuário, pois não precisa ficar na tela de publicação esse tempo todo, sem fazer nada. Mas também é bom para as empresas, e irei explicar do porquê, agora mesmo.
+
+Resumindo: O RabbitMQ, é um poderoso Message Broker, que fornece meios seguros e escaláveis para uma aplicação microservices se comunicar entre os serviços.
+
+Como as empresas se beneficiam do RabbitMQ?
+Com o RabbitMQ, as empresas conseguem criar sistemas altamente escaláveis, com pontos de falhas únicos, assíncronos e robustos.
+
+Continuando no exemplo do Instagram, vimos que os usuários se beneficiam disso, vendo que não precisam ficar preso na tela do celular, até a publicação ser realizada.
+
+Imagina que o Instagram, tem 5 microserviços, e esses 5 microserviços são independentes entre si, pois se um falhar, não irá afetar o outro. Agora, imagina que esses 5 microserviços, possuem 2 replicas cada. Logo, temos 5 serviços, e 10 servers.
+
+Quando você diz ao Instagram que vai publicar, o Instagram pega os dados que você enviou(imagens), e então, coloca em um tópico do RabbitMQ, onde um serviço(dois servers), serão responsáveis por fazer o “resize” da imagem, em diferentes resoluções.
+
+Como existem dois servidores para um serviço, a mensagem enviada, irá para um desses servidores. Por padrão, o RabbitMQ funciona com o algoritmo Round-Robin, que basicamente faz um ouvinte(consumer) receber a mensagem por vez. Logo, se temos 2 servidores, e o primeiro servidor foi o último a receber uma mensagem, o servidor 2 que irá receber a próxima. E assim ficará nesse Loop de 1 -> 2 -> 1 -> 2 -> 1 -> 2….
+
+Isso ajuda o recurso computacional ser bem gasto, ficando proporcional. Se um servidor recebeu 50 mensagens em 1 segundo, o segundo servidor recebeu provavelmente 50 mensagens em 1 segundo também.
